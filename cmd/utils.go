@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/briandowns/spinner"
 )
 
@@ -20,7 +22,24 @@ var loading = spinner.New(spinner.CharSets[39], 150*time.Millisecond)
 // EoE : exit with error code 1 and print if err is notnull
 func EoE(msg string, err error) {
 	if err != nil {
-		fmt.Printf("\n❌  %s\n   %v\n", msg, err)
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case ecs.ErrCodeServerException:
+				fmt.Println(ecs.ErrCodeServerException, aerr.Error())
+			case ecs.ErrCodeClientException:
+				fmt.Println(ecs.ErrCodeClientException, aerr.Error())
+			case ecs.ErrCodeInvalidParameterException:
+				fmt.Println(ecs.ErrCodeInvalidParameterException, aerr.Error())
+			case ecs.ErrCodeClusterNotFoundException:
+				fmt.Println(ecs.ErrCodeClusterNotFoundException, aerr.Error())
+			default:
+				fmt.Println(aerr.Error())
+			}
+		} else {
+			// Print the error, cast err to awserr.Error to get the Code and
+			// Message from an error.
+			fmt.Printf("\n❌  %s\n   %v\n", msg, err.Error())
+		}
 		os.Exit(1)
 	}
 }

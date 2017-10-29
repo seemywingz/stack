@@ -19,17 +19,18 @@ import (
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/spf13/cobra"
 )
 
-// Global Flags
+// Global
 var (
-	tail,
-	verbose,
-	dryRun bool
+	region,
+	profile,
+	cluster string
+	sess *session.Session
+	svc  *ecs.ECS
 )
 
 // RootCmd represents the base command when called without any subcommands
@@ -39,19 +40,23 @@ var RootCmd = &cobra.Command{
 	Long:  ``,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Rocks")
-	},
+	// Run: func(cmd *cobra.Command, args []string) {
+	// 	fmt.Println("Rocks")
+	// },
 }
 
 var statusCmd = &cobra.Command{
 	Use:   "status",
-	Short: "",
+	Short: "Get Current Cluster Status",
 	Long:  ``,
-	Run: func(cmd *cobra.Command, args []string) {
-		getStatus()
+	Run:   getStatus,
+}
 
-	},
+var eventCmd = &cobra.Command{
+	Use:   "event",
+	Short: "List Current Cluster Events",
+	Long:  ``,
+	Run:   getEvents,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -64,51 +69,49 @@ func Execute() {
 }
 
 func init() {
-	// cobra.OnInitialize(GetConfig)
+	cobra.OnInitialize(getSession)
 
 	// Parse Global Flagss
-	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Vebose output")
-	RootCmd.PersistentFlags().BoolVarP(&tail, "tail", "t", false, "Tail the logs")
-	RootCmd.PersistentFlags().BoolVarP(&dryRun, "dry-run", "d", false, "Perform Dry Run, don't actually execute any actions")
+	RootCmd.PersistentFlags().StringVarP(&profile, "profle", "p", "default", "Specify which AWS Profile to use")
+	RootCmd.PersistentFlags().StringVarP(&region, "region", "r", "us-east-1", "Set AWS Region")
+	RootCmd.PersistentFlags().StringVarP(&cluster, "cluster", "c", "default", "Set AWS ECS Cluster Name")
 
 	// Add SubCommand
 	RootCmd.AddCommand(statusCmd)
+
+	RootCmd.AddCommand(eventCmd)
+	eventCmd.Flags().StringP("service", "s", "sample-webapp", "Set the name of the service")
 }
 
-func getStatus() {
-	fmt.Println("Status")
-
-	// Create a Session with a custom region
-	sess := session.Must(session.NewSession(&aws.Config{
-		Region: aws.String("us-east-1"),
+func getSession() {
+	// Specify profile for config and region for requests
+	sess = session.Must(session.NewSessionWithOptions(session.Options{
+		Config:  aws.Config{Region: aws.String(region)},
+		Profile: profile,
 	}))
+	svc = ecs.New(sess)
+}
 
-	svc := ecs.New(sess)
+func getStatus(cmd *cobra.Command, args []string) {
 	input := &ecs.DescribeClustersInput{
 		Clusters: []*string{
-			aws.String("default"),
+			aws.String(cluster),
 		},
 	}
 	result, err := svc.DescribeClusters(input)
-	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			case ecs.ErrCodeServerException:
-				fmt.Println(ecs.ErrCodeServerException, aerr.Error())
-			case ecs.ErrCodeClientException:
-				fmt.Println(ecs.ErrCodeClientException, aerr.Error())
-			case ecs.ErrCodeInvalidParameterException:
-				fmt.Println(ecs.ErrCodeInvalidParameterException, aerr.Error())
-			default:
-				fmt.Println(aerr.Error())
-			}
-		} else {
-			// Print the error, cast err to awserr.Error to get the Code and
-			// Message from an error.
-			fmt.Println(err.Error())
-		}
-		return
+	EoE("Error Getting Cluster Status", err)
+	fmt.Println(result)
+}
+
+func getEvents(cmd *cobra.Command, args []string) {
+	input := &ecs.DescribeServicesInput{
+		Services: []*string{
+			aws.String(cmd.Flag("service").Value.String()),
+		},
 	}
 
-	fmt.Println(result)
+	result, err := svc.DescribeServices(input)
+	EoE("Error Describing Container Instances", err)
+	events := result.Services[0].Events
+	fmt.Println(events)
 }
