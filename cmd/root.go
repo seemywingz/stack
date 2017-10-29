@@ -18,6 +18,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/spf13/cobra"
 )
 
@@ -45,7 +49,8 @@ var statusCmd = &cobra.Command{
 	Short: "",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Status")
+		getStatus()
+
 	},
 }
 
@@ -59,7 +64,7 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(GetConfig)
+	// cobra.OnInitialize(GetConfig)
 
 	// Parse Global Flagss
 	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Vebose output")
@@ -68,4 +73,42 @@ func init() {
 
 	// Add SubCommand
 	RootCmd.AddCommand(statusCmd)
+}
+
+func getStatus() {
+	fmt.Println("Status")
+
+	// Create a Session with a custom region
+	sess := session.Must(session.NewSession(&aws.Config{
+		Region: aws.String("us-east-1"),
+	}))
+
+	svc := ecs.New(sess)
+	input := &ecs.DescribeClustersInput{
+		Clusters: []*string{
+			aws.String("default"),
+		},
+	}
+	result, err := svc.DescribeClusters(input)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case ecs.ErrCodeServerException:
+				fmt.Println(ecs.ErrCodeServerException, aerr.Error())
+			case ecs.ErrCodeClientException:
+				fmt.Println(ecs.ErrCodeClientException, aerr.Error())
+			case ecs.ErrCodeInvalidParameterException:
+				fmt.Println(ecs.ErrCodeInvalidParameterException, aerr.Error())
+			default:
+				fmt.Println(aerr.Error())
+			}
+		} else {
+			// Print the error, cast err to awserr.Error to get the Code and
+			// Message from an error.
+			fmt.Println(err.Error())
+		}
+		return
+	}
+
+	fmt.Println(result)
 }
