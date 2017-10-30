@@ -15,11 +15,13 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/spf13/cobra"
 )
@@ -29,8 +31,9 @@ var (
 	region,
 	profile,
 	cluster string
-	sess *session.Session
-	svc  *ecs.ECS
+	sess   *session.Session
+	svcECS *ecs.ECS
+	svcCF  *cloudformation.CloudFormation
 )
 
 // RootCmd represents the base command when called without any subcommands
@@ -53,8 +56,8 @@ var statusCmd = &cobra.Command{
 }
 
 var eventCmd = &cobra.Command{
-	Use:   "event",
-	Short: "List Current Cluster Events",
+	Use:   "events",
+	Short: "List Current Events for Provided Service",
 	Long:  ``,
 	Run:   getEvents,
 }
@@ -72,7 +75,7 @@ func init() {
 	cobra.OnInitialize(getSession)
 
 	// Parse Global Flagss
-	RootCmd.PersistentFlags().StringVarP(&profile, "profle", "p", "default", "Specify which AWS Profile to use")
+	RootCmd.PersistentFlags().StringVarP(&profile, "profle", "p", "default", "Set  AWS Profile")
 	RootCmd.PersistentFlags().StringVarP(&region, "region", "r", "us-east-1", "Set AWS Region")
 	RootCmd.PersistentFlags().StringVarP(&cluster, "cluster", "c", "default", "Set AWS ECS Cluster Name")
 
@@ -80,7 +83,7 @@ func init() {
 	RootCmd.AddCommand(statusCmd)
 
 	RootCmd.AddCommand(eventCmd)
-	eventCmd.Flags().StringP("service", "s", "sample-webapp", "Set the name of the service")
+	eventCmd.Flags().StringP("service", "s", "default", "Set the name of the service")
 }
 
 func getSession() {
@@ -89,7 +92,8 @@ func getSession() {
 		Config:  aws.Config{Region: aws.String(region)},
 		Profile: profile,
 	}))
-	svc = ecs.New(sess)
+	svcECS = ecs.New(sess)
+	svcCF = cloudformation.New(sess)
 }
 
 func getStatus(cmd *cobra.Command, args []string) {
@@ -98,20 +102,38 @@ func getStatus(cmd *cobra.Command, args []string) {
 			aws.String(cluster),
 		},
 	}
-	result, err := svc.DescribeClusters(input)
+	result, err := svcECS.DescribeClusters(input)
 	EoE("Error Getting Cluster Status", err)
 	fmt.Println(result)
 }
 
-func getEvents(cmd *cobra.Command, args []string) {
+func getServeiceEvents(cmd *cobra.Command) {
 	input := &ecs.DescribeServicesInput{
 		Services: []*string{
 			aws.String(cmd.Flag("service").Value.String()),
 		},
 	}
 
-	result, err := svc.DescribeServices(input)
+	result, err := svcECS.DescribeServices(input)
 	EoE("Error Describing Container Instances", err)
+	if len(result.Services) == 0 {
+		erSrv := cmd.Flag("service").Value.String()
+		EoE("Error Finding Events for "+erSrv, errors.New("Please Check Service Name"))
+	}
 	events := result.Services[0].Events
 	fmt.Println(events)
+}
+
+func getEvents(cmd *cobra.Command, args []string) {
+
+	if cmd.Flag("service").Value.String() != "default" {
+		getServeiceEvents(cmd)
+	}
+
+	input := &cloudformation.DescribeStackEventsInput{
+		StackName: aws.String("EC2ContainerService-default"),
+	}
+	result, err := svcCF.DescribeStackEvents(input)
+	EoE("Error Describing Stack Events", err)
+	fmt.Println(result)
 }
