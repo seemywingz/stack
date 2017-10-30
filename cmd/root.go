@@ -49,7 +49,7 @@ var RootCmd = &cobra.Command{
 	// },
 }
 
-var eventCmd = &cobra.Command{
+var eventsCmd = &cobra.Command{
 	Use:   "events",
 	Short: "List Current Events for Provided Service",
 	Long:  ``,
@@ -73,10 +73,10 @@ func init() {
 	RootCmd.PersistentFlags().StringVarP(&region, "region", "r", "us-east-1", "Set AWS Region")
 
 	// Add SubCommand
-	RootCmd.AddCommand(eventCmd)
-	eventCmd.Flags().StringVarP(&stack, "stack", "s", "EC2ContainerService-default", "Set AWS Cloud Formation Stack Name")
-	eventCmd.Flags().IntVarP(&n, "number", "n", -1, "Number of Events to Output")
-	eventCmd.Flags().String("service", "nil", "Set the name of the ECS container service")
+	RootCmd.AddCommand(eventsCmd)
+	eventsCmd.Flags().StringVarP(&stack, "stack", "s", "EC2ContainerService-default", "Set AWS Cloud Formation Stack Name")
+	eventsCmd.Flags().IntVarP(&n, "number", "n", -1, "Number of Events to Output")
+	eventsCmd.Flags().String("service", "nil", "Set the name of the ECS container service")
 }
 
 func getSession() {
@@ -132,5 +132,8 @@ func getEvents(cmd *cobra.Command, args []string) {
 			fmt.Println("      Resource Type:", *result.StackEvents[i].ResourceType)
 			fmt.Println("          Timestamp:", *result.StackEvents[i].Timestamp)
 		}
+		println()
+		fmt.Printf("Events Printed: %v\n", n)
+		fmt.Printf("  Events Total: %v\n", len(result.StackEvents))
 	}
 }
