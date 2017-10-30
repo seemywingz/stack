@@ -111,6 +111,10 @@ func getServeiceEvents(cmd *cobra.Command) {
 		println()
 		fmt.Println(events[i])
 	}
+
+	println()
+	fmt.Printf("Events Printed: %v\n", n)
+	fmt.Printf("  Events Total: %v\n", len(events))
 }
 
 func getEvents(cmd *cobra.Command, args []string) {
