@@ -93,3 +93,4 @@ stack deploy -s MyStack -f ~/path/to/MyStack.json
     * better error handling
     * make it smarter
     * better documentation
+    * tests, tests and maybe some tests
