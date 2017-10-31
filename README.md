@@ -36,7 +36,7 @@ Flags:
 Use "stack [command] --help" for more information about a command.
 ```
 
-`stack events`: List Current Events for Provided Service 
+### `stack events`: List Current Events for Provided Service 
 ```
 stack events [flags]
 
@@ -59,7 +59,7 @@ stack events -s MyStack -n 5
 stack events --service MyService -n 10
 ```
   
-`stack deploy`: Deploy New Stack from Provided JSON 
+### `stack deploy`: Deploy New Stack from Provided JSON 
 ```
 stack deploy [flags]
 
