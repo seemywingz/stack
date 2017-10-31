@@ -80,7 +80,7 @@ func init() {
 	cobra.OnInitialize(getSession)
 
 	// Parse Global Flagss
-	RootCmd.PersistentFlags().StringVarP(&profile, "profle", "p", "default", "Set  AWS Profile")
+	RootCmd.PersistentFlags().StringVarP(&profile, "profle", "p", "default", "Set AWS Profile")
 	RootCmd.PersistentFlags().StringVarP(&region, "region", "r", "us-east-1", "Set AWS Region")
 	RootCmd.PersistentFlags().StringVarP(&stack, "stack", "s", "default", "Set AWS Cloud Formation Stack Name")
 
