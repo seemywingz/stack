@@ -54,7 +54,7 @@ Global Flags:
 ```
 stack events -s MyStack -n 5 
 ```
-#### Example: get lat 10 events for MyService
+#### Example: get last 10 events for MyService
 ```
 stack events --service MyService -n 10
 ```
