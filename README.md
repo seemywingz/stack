@@ -92,3 +92,4 @@ stack deploy -s MyStack -f ~/path/to/MyStack.json
     * more options/defaults
     * better error handling
     * make it smarter
+    * better documentation
