@@ -46,7 +46,7 @@ Flags:
       --service string   If provided, will return the events for the provided service, instead of the stack (default "nil")
 
 Global Flags:
-  -p, --profle string   Set  AWS Profile (default "default")
+  -p, --profle string   Set AWS Profile (default "default")
   -r, --region string   Set AWS Region (default "us-east-1")
   -s, --stack string    Set AWS Cloud Formation Stack Name (default "default")
 ```
