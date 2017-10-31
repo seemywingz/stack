@@ -35,7 +35,7 @@ var (
 	region,
 	profile,
 	stack,
-	jsonFile string
+	fileName string
 	n      int
 	sess   *session.Session
 	svcECS *ecs.ECS
@@ -82,14 +82,15 @@ func init() {
 	// Parse Global Flagss
 	RootCmd.PersistentFlags().StringVarP(&profile, "profle", "p", "default", "Set  AWS Profile")
 	RootCmd.PersistentFlags().StringVarP(&region, "region", "r", "us-east-1", "Set AWS Region")
-	RootCmd.PersistentFlags().StringVarP(&stack, "stack", "s", "EC2ContainerService-default", "Set AWS Cloud Formation Stack Name")
+	RootCmd.PersistentFlags().StringVarP(&stack, "stack", "s", "default", "Set AWS Cloud Formation Stack Name")
 
 	// Add SubCommand
 	RootCmd.AddCommand(eventsCmd)
 	eventsCmd.Flags().IntVarP(&n, "number", "n", -1, "Number of Events to Output")
-	eventsCmd.Flags().String("service", "nil", "Set the name of the ECS container service")
+	eventsCmd.Flags().String("service", "nil", "If provided, will return the events for the provided service, instead of the stack")
 
 	RootCmd.AddCommand(deployCmd)
+	deployCmd.Flags().StringVarP(&fileName, "file", "f", "stack.json", "Provide the File Location for Cloud Formation Input")
 }
 
 func getSession() {
@@ -157,8 +158,7 @@ func getEvents(cmd *cobra.Command, args []string) {
 
 func deploy(cmd *cobra.Command, args []string) {
 
-	jsonFile = "json/test.json"
-	jsonObj, err := ioutil.ReadFile(jsonFile)
+	jsonObj, err := ioutil.ReadFile(fileName)
 	EoE("Error Reading Config File:", err)
 
 	t := &cf.Template{}
