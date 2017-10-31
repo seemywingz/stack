@@ -79,7 +79,7 @@ stack deploy -s MyStack -f ~/path/to/MyStack.json
 
 ## How much time did you spend?
   * Overall I'd say about 4 hours 
-  * To test the cli I made a test IAM user and ECS setup with Cloudformation Test Template  
+  * To test the cli I made a test IAM user and ECS setup with Cloudformation Test Template, which did not take a lot of time, but part of the whole process 
   * I also spent a lot of time just playing around with output, deciding command syntax and restraining myself from adding features not requested ;)
 
 ## What was the most difficult thing for you?
