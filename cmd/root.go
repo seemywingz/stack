@@ -15,14 +15,18 @@
 package cmd
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	cf "github.com/crewjam/go-cloudformation"
+	cfd "github.com/crewjam/go-cloudformation/deploycfn"
 	"github.com/spf13/cobra"
 )
 
@@ -30,7 +34,8 @@ import (
 var (
 	region,
 	profile,
-	stack string
+	stack,
+	jsonFile string
 	n      int
 	sess   *session.Session
 	svcECS *ecs.ECS
@@ -56,6 +61,12 @@ var eventsCmd = &cobra.Command{
 	Run:   getEvents,
 }
 
+var deployCmd = &cobra.Command{
+	Use:   "deploy",
+	Short: "Deploy new Cloudformation Stack from json",
+	Run:   deploy,
+}
+
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
@@ -71,12 +82,14 @@ func init() {
 	// Parse Global Flagss
 	RootCmd.PersistentFlags().StringVarP(&profile, "profle", "p", "default", "Set  AWS Profile")
 	RootCmd.PersistentFlags().StringVarP(&region, "region", "r", "us-east-1", "Set AWS Region")
+	RootCmd.PersistentFlags().StringVarP(&stack, "stack", "s", "EC2ContainerService-default", "Set AWS Cloud Formation Stack Name")
 
 	// Add SubCommand
 	RootCmd.AddCommand(eventsCmd)
-	eventsCmd.Flags().StringVarP(&stack, "stack", "s", "EC2ContainerService-default", "Set AWS Cloud Formation Stack Name")
 	eventsCmd.Flags().IntVarP(&n, "number", "n", -1, "Number of Events to Output")
 	eventsCmd.Flags().String("service", "nil", "Set the name of the ECS container service")
+
+	RootCmd.AddCommand(deployCmd)
 }
 
 func getSession() {
@@ -140,4 +153,24 @@ func getEvents(cmd *cobra.Command, args []string) {
 		fmt.Printf("Events Printed: %v\n", n)
 		fmt.Printf("  Events Total: %v\n", len(result.StackEvents))
 	}
+}
+
+func deploy(cmd *cobra.Command, args []string) {
+
+	jsonFile = "json/test.json"
+	jsonObj, err := ioutil.ReadFile(jsonFile)
+	EoE("Error Reading Config File:", err)
+
+	t := &cf.Template{}
+	json.Unmarshal(jsonObj, t)
+	fmt.Printf("AWSTemplateFormatVersion: %s\n", t.AWSTemplateFormatVersion)
+
+	deployInput := cfd.DeployInput{
+		Session:        sess,
+		StackName:      stack,
+		Template:       t,
+		Parameters:     nil,
+		TemplateBucket: "",
+	}
+	EoE("Error Deploying New Stack", cfd.Deploy(deployInput))
 }

@@ -1,0 +1,14 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Ec2 Cloud Formation Test",
+    "Resources": {
+        "MyEC2Instance": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "SubnetId": "subnet-fb6edb8d",
+                "ImageId": "ami-8fd01af5",
+                "KeyName": "KEVPC"
+            }
+        }
+    }
+}
