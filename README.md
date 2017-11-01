@@ -1,5 +1,5 @@
 # Stack 
-###### We Work -- ECS Stack Master Coding Challenge
+###### WeWork -- ECS Stack Master Coding Challenge
 
 ## Setup
 This CLI Uses the [AWS SDK for Go](https://aws.amazon.com/sdk-for-go/) and requires proper credentials  
